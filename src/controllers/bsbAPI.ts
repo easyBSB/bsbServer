@@ -1,12 +1,10 @@
-import { BodyParams, Controller, Get, Post } from "@tsed/common";
-import { OperationId, array, from, OneOf, Tags, Any, Description, Required, Example, Returns, object } from "@tsed/schema"
-import { doesNotMatch } from "assert";
-
-
-import { Device } from "../models/device"
+import { BodyParams, Controller, Get, PathParams, Post } from "@tsed/common";
+import { OperationId, array, from, OneOf, Tags, Description, Required, Example, Returns } from "@tsed/schema"
 import { ResetValueResponse, ResetValueResponseEntry, SetValueResponse, SetValueResponseEntry, ValueResponse, ValueResponseEntry } from "../models/ValueResponses";
 //import { Hidden } from "@tsed/swagger";
 import { ParameterRequest, ParameterSetRequest } from "../models/ParameterRequests";
+import { ApiVersionResponse } from "../models/ApiVersionResponse";
+import { InformationResponse, InformationResponseExample } from "../models/InformationResponse";
 
 @Controller("/")
 export class BSBApiController {
@@ -24,11 +22,22 @@ export class BSBApiController {
     return [data]
   }
 
+  private id2ParameterRequest(id: string): ParameterRequest[]
+  {
+    return id
+      .split(',')
+      .map(item => { 
+        const res = new ParameterRequest()
+        res.parameter = parseInt(item, 10)
+        return res
+      })
+  }
+
   //#region General
   @Get("/JV")
   @Tags('General')
-  //@Returns(200, ResetValueResponse).ContentType("application/json")
-  getApiVersion(): any {
+  @Returns(200, ApiVersionResponse).ContentType("application/json")
+  getApiVersion(): ApiVersionResponse {
     return { 
       api_version: '2.0' 
     }
@@ -36,8 +45,9 @@ export class BSBApiController {
 
   @Get("/JI")
   @Tags('General')
-  getInformations(): any {
-    return { uptime: 886223 }
+  @Returns(200, InformationResponse).ContentType("application/json")
+  getInformations(): InformationResponse {
+    return InformationResponseExample
   }
   //#endregion
 
@@ -63,6 +73,18 @@ export class BSBApiController {
     return new Promise((done) => done(result))
   }
 
+  @Get("/JR=:id")
+  @OperationId("getResetValues")
+  @Tags('Parameter')
+  @Returns(200, ResetValueResponse).ContentType("application/json")
+  async getResetValues(
+    @PathParams("id") 
+    @Description('This can be an parameter of multiple parameter separated by comma.')
+    @Example('700,710')
+    id: string): Promise<ResetValueResponse> {
+    return this.fetchResetValues(this.id2ParameterRequest(id))
+  }
+
   @Post("/JQ")
   @OperationId("fetchValues")
   @Tags('Parameter')
@@ -81,6 +103,18 @@ export class BSBApiController {
     result['700'] = new ValueResponseEntry()
     result['700'].value = payload[0].parameter.toString()
     return new Promise((done) => done(result))
+  }
+
+  @Get("/JQ=:id")
+  @OperationId("getValues")
+  @Tags('Parameter')
+  @Returns(200, ValueResponse).ContentType("application/json")
+  async getValues(
+    @PathParams("id")
+    @Description('This can be an parameter of multiple parameter separated by comma.')
+    @Example('700,710')
+    id: string): Promise<ValueResponse> {
+    return this.fetchValues(this.id2ParameterRequest(id))
   }
 
   @Post("/JS")
@@ -105,19 +139,4 @@ export class BSBApiController {
   //#endregion
 
 
-
-  // @Get("/JQ=:id")
-  // // @Schema({ "name": {
-  // //   type: "string"
-  // // }})
-  // @OperationPath("PUT","/JQ=:id")
-  // @Returns(200, Device2).ContentType("application/json")
-  // @OperationId("getHelloWorld")
-  // @Summary("summary of this function")
-  // @Description("das ist dann ein längerere Text der Funktion")
-  // get(@PathParams("id") id: string): Device2 {
-  //   const dd = new Device2()
-  //   dd.name = id
-  //   return dd;
-  // }
 }

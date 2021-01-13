@@ -32,6 +32,17 @@ export class ResetValueResponseEntry {
     value: string
 }
 
+@Example({
+    '700': {
+        error: 0,
+        value: '1',
+    },
+    '710': {
+        error: 0,
+        value: '21.0',
+    },
+}
+)
 @AdditionalProperties(from(ResetValueResponseEntry))
 export class ResetValueResponse {
     [key: string]: ResetValueResponseEntry

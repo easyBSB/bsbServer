@@ -1,12 +1,16 @@
 import { Default, Description, Enum, Example, Maximum, Minimum, Required, } from "@tsed/schema";
 
+
 @Example({ parameter: 700 })
-export class ParameterRequest {
+export class Parameter {
     
     @Required()
     @Description('The id of the parameter.')
     parameter:	number
+}
 
+@Example({ parameter: 700, destination: 0 })
+export class ParameterRequest extends Parameter {
     @Default(0)
     @Minimum(0)
     @Maximum(127)
