@@ -6,18 +6,45 @@ export enum readonly {
     false = 0
 }
 
-@Example({})
-export class ValueResponseEntry {
-
+export class SetValueResponseEntry {
     @Required()
-    @Description('Translated name of the parameter')
-    name: string
+    status: number
+}
 
+@Example({
+    '700': {
+        status: 1
+    },
+    '710': {
+        status: 1
+    }
+})
+@AdditionalProperties(from(SetValueResponseEntry))
+export class SetValueResponse {
+    [key: string]: SetValueResponseEntry
+}
+
+export class ResetValueResponseEntry {
     @Required()
     error: number
 
     @Required()
     value: string
+}
+
+@AdditionalProperties(from(ResetValueResponseEntry))
+export class ResetValueResponse {
+    [key: string]: ResetValueResponseEntry
+}
+
+@Example({})
+export class ValueResponseEntry extends ResetValueResponseEntry {
+
+    @Required()
+    @Description('Translated name of the parameter')
+    name: string
+
+
 
     @Required()
     desc: string
@@ -59,10 +86,3 @@ export class ValueResponseEntry {
 export class ValueResponse {
     [key: string]: ValueResponseEntry
 }
-
-
-// {
-//     "710": {
-//         "status": 1
-//     }
-// }
