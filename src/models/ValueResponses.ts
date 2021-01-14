@@ -1,13 +1,11 @@
-
 import { AdditionalProperties, Description, Enum, Example, from, Required } from "@tsed/schema";
 
-export enum readonly {
-    true = 1,
-    false = 0
-}
+import { DataType, DataTypeDescription, SetStatus, SetStatusDescription, TrueFalse, TrueFalseDescription } from './Enums'
 
 export class SetValueResponseEntry {
     @Required()
+    @Enum(SetStatus)
+    @Description(SetStatusDescription)
     status: number
 }
 
@@ -48,40 +46,42 @@ export class ResetValueResponse {
     [key: string]: ResetValueResponseEntry
 }
 
-@Example({})
+export const ValueResponseEntryExample700 = {
+    name: 'Betriebsart',
+    error: 0,
+    value: '1',
+    desc: 'Automatic',
+    dataType: 1,
+    readonly: 0,
+    unit: ''
+}
+@Example(ValueResponseEntryExample700)
 export class ValueResponseEntry extends ResetValueResponseEntry {
 
     @Required()
     @Description('Translated name of the parameter')
     name: string
 
-
-
     @Required()
+    @Description('Text representation of the value (e.g. enum)')
     desc: string
 
     @Required()
+    @Enum(DataType)
+    @Description(DataTypeDescription)
     dataType: number
 
     @Required()
-    @Enum(readonly)
+    @Enum(TrueFalse)
+    @Description(TrueFalseDescription)
     readonly: number
 
     @Required()
     unit: string
 }
 
-
 @Example({
-    '700': {
-        name: 'Betriebsart',
-        error: 0,
-        value: '1',
-        desc: 'Automatic',
-        dataType: 1,
-        readonly: 0,
-        unit: ''
-    },
+    '700': ValueResponseEntryExample700,
     '710': {
         name: 'Komfortsollwert',
         error: 0,

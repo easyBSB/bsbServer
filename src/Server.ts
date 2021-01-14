@@ -40,12 +40,21 @@ if (isProduction) {
 
   logger: {
     disableRoutesSummary: isProduction,
-    level: "info"
+    level: isProduction ? "error": "info"
   },
   mount: {
     "/": [
       `${rootDir}/controllers/**/*.ts`
     ],
+  },
+  componentsScan: [
+    `${rootDir}/services/**/*.ts`
+  ],
+  customServiceOptions: {
+    test: 'Hallo'
+  },
+  bsbServiceOptions: {
+    test: 'Hallo BSB'
   },
   swagger: [
     {

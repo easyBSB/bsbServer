@@ -65,16 +65,16 @@ export class InformationResponse {
     version: string
 
     @Property()
-    freeram: number
+    freeram?: number
 
     @Property()
-    uptime: number
+    uptime?: number
 
     @Property()
-    MAC: string
+    MAC?: string
 
     @Property()
-    freespace: number
+    freespace?: number
 
     @Required()
     bus: string // ENUM BSB, LPB, PPS
@@ -89,32 +89,32 @@ export class InformationResponse {
     busdest: number
 
     @Property()
-    monitor: number
+    monitor?: number
 
     @Property()
-    verbose: number
+    verbose?: number
 
     @Property()
-    onewirebus: number
+    onewirebus?: number
 
     @Property()
-    onewiresensors: number
+    onewiresensors?: number
 
     @Property()
-    dhtbus: Pin[]
+    dhtbus?: Pin[]
 
     @Property()
-    protectedGPIO: Pin[]
+    protectedGPIO?: Pin[]
 
     @Property()
-    averages: Parameter[]
+    averages?: Parameter[]
 
     @Property()
-    logvalues: number
+    logvalues?: number
 
     @Property()
-    loginterval: number
+    loginterval?: number
 
     @Property()
-    logged: Parameter[]
+    logged?: Parameter[]
 }
