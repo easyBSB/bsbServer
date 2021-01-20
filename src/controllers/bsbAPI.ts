@@ -1,12 +1,18 @@
 import { BodyParams, Configuration, Controller, Get, PathParams, Post } from "@tsed/common";
 import { OperationId, array, from, OneOf, Tags, Description, Required, Example, Returns } from "@tsed/schema"
-import { ResetValueResponse, ResetValueResponseEntry, SetValueResponse, SetValueResponseEntry, ValueResponse, ValueResponseEntry } from "../models/ValueResponses";
+import { ResetValueResponse, ResetValueResponseEntry, SetValueResponse, SetValueResponseEntry, ValueResponse } from "../models/ValueResponses";
 import { Hidden } from "@tsed/swagger";
-import { ParameterRequest, ParameterSetRequest } from "../models/ParameterRequests";
+import { ParameterRequest, ParameterSetConfigRequest, ParameterSetRequest } from "../models/ParameterRequests";
 import { ApiVersionResponse } from "../models/ApiVersionResponse";
 import { InformationResponse, InformationResponseExample } from "../models/InformationResponse";
 import { ParameterDetailResponse } from "../models/ParameterDetailResponse";
 import { Categories } from "../models/Categorie";
+
+import { BSB, MSG_TYPE} from "@bsbJS/bsb"
+import { Definition } from "@bsbJS/Definition"
+import config from "@easybsb/bsbdef"
+import * as Payloads from "@bsbJS/Payloads"
+import { Helper } from "@bsbJS/Helper";
 
 @Controller("/")
 export class BSBApiController {
@@ -14,11 +20,36 @@ export class BSBApiController {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   bsbSettings: any
 
-  constructor(@Configuration() private configuration: Configuration){
+  bsb:BSB
+
+  constructor(@Configuration() private configuration: Configuration) {
+    
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.bsbSettings = this.configuration.get<any>('bsbServiceOptions');
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const definition = new Definition(config as any)
+
+    this.bsb = new BSB(definition, { family:0, var: 0}, 0xC3)
+
+    this.bsb.connect('192.168.203.179', 1000)
 
     console.log("*************************")
     console.log(this.bsbSettings)
+
+    const language = 'DE'
+
+    const nm = this.bsb.Log$.subscribe((log) => {
+
+      // ToDo implement equivalent to telnet log
+      console.log(
+          Helper.toHexString(log.msg.data).padEnd(50, ' ') + MSG_TYPE[log.msg.typ].padStart(4, ' ') + ' '
+          + Helper.toHexString([log.msg.src])
+          + ' -> ' + Helper.toHexString([log.msg.dst])
+          + ' ' + log.command?.command + ' ' + Helper.getLanguage(log.command?.description, language) + ' (' + log.command?.parameter + ') = ' 
+          + (log.value?.toString(language) ?? '---')
+      )
+  });
   }
 
   //#region helpers
@@ -44,7 +75,7 @@ export class BSBApiController {
   @Hidden()
   @Get("/")
   // maybe redirect to -> web
-  getIndex() : string {
+  getIndex(): string {
     return "Hallo"
   }
   //#endregion
@@ -150,10 +181,48 @@ export class BSBApiController {
 
     const payload = this.MakeArray(payloadArrayOrItem)
 
-    const result = new ValueResponse()
-    result['700'] = new ValueResponseEntry()
-    result['700'].value = payload[0].parameter.toString()
-    return new Promise((done) => done(result))
+      const query = []
+      for(const item of payload)
+      {
+        query.push(item.parameter)
+      }
+
+    const language = 'DE'
+    
+    
+    return  await this.bsb.get(query)
+            .then(data => {
+                const result: ValueResponse = {}
+                for (const res of data) {
+                  
+                    if (res) {
+
+                        let error = 0
+                        let value = res.value?.toString(language)
+                        let desc = ''
+                        if (res.value instanceof Payloads.Error) {
+                            error = res.value.value ?? 0
+                            value = ''
+                        }
+
+                        if (res.value instanceof Payloads.Enum) {
+                            desc = value
+                            value = res.value.value?.toString() ?? ''
+                        }
+
+                        result[res.command.parameter] = {
+                            name: Helper.getLanguage(res.command.description, language) ?? '',
+                            error: error,
+                            value: value,
+                            desc: desc,
+                            dataType: res.command.type.datatype_id,
+                            readonly: ((res.command.flags?.indexOf('READONLY') ?? -1) != -1) ? 1 : 0,
+                            unit: Helper.getLanguage(res.command.type.unit, language) ?? ''
+                        }
+                    }
+                }
+                return result
+            })
   }
 
   @Get("/JQ=:id")
@@ -213,6 +282,42 @@ export class BSBApiController {
     return new Promise((done) => done({ all: id } as any))
     // et alle ids from category and than fetch ids
     //return this.fetchParameterDetails(this.id2ParameterRequest(id))
+  }
+  //#endregion
+
+  //#region Configuration
+
+
+  @Post("/JW")
+  @OperationId("setConfigValues")
+  @Tags('Configuration')
+  @Returns(200, SetValueResponse).ContentType("application/json")
+  async setConfigValues(
+    @BodyParams()
+    @Description('The body contains an array of just one simple ParameterSetConfigRequest object')
+    @Example([{ parameter: 0, value: "15" }, { parameter: 6, value: "5" }])
+    @Required()
+    @OneOf(from(ParameterSetConfigRequest), array().items(from(ParameterSetConfigRequest)))
+    payloadArrayOrItem: ParameterSetConfigRequest | ParameterSetConfigRequest[]): Promise<SetValueResponse> {
+
+    const payload = this.MakeArray(payloadArrayOrItem)
+
+    // TODO check RESUL
+    // [
+    //   {
+    //     "0": null,
+    //     "status": 1
+    //   },
+    //   {
+    //     "6": null,
+    //     "status": 1
+    //   }
+    // ]
+
+    const result = new SetValueResponse()
+    result['700'] = new SetValueResponseEntry()
+    result['700'].status = payload[0].parameter
+    return new Promise((done) => done(result))
   }
   //#endregion
 

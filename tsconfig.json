@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "baseUrl": "./",
     "module": "commonjs",
     "target": "esnext",
     "sourceMap": true,
@@ -26,7 +27,12 @@
     ],
     "typeRoots": [
       "./node_modules/@types"
-    ]
+    ],
+    "paths": {
+      "@bsbJS/*": [
+        "../bsbjs/src/*"
+      ]
+    }
   },
   "include": [
     "./src/**/*.ts"

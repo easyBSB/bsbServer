@@ -45,3 +45,10 @@ export enum DataType {
     Text = 7,
     PPSTime = 8
 }
+
+export enum ParameterSetRequestType {
+    /** INF Message */
+    INF = 0,
+    /** SET Message */
+    SET = 1
+}

@@ -1,4 +1,5 @@
 import { Default, Description, Enum, Example, Maximum, Minimum, Required, } from "@tsed/schema";
+import { ParameterSetRequestType } from "./Enums";
 
 
 @Example({ parameter: 700 })
@@ -18,16 +19,15 @@ export class ParameterRequest extends Parameter {
     destination: number
 }
 
-export enum ParameterSetRequestType {
-    /** INF Message */
-    INF = 0,
-    /** SET Message */
-    SET = 1
-}
+@Example({ parameter: 700, value: "21" })
+export class ParameterSetConfigRequest extends ParameterRequest {
 
-@Example({ parameter: 700, type:2, value: "21" })
-export class ParameterSetRequest extends ParameterRequest {
-    
+    @Required()
+    @Description('New parameter value')
+    value:string
+}
+@Example({ parameter: 700, type:0, value: "21" })
+export class ParameterSetRequest extends ParameterSetConfigRequest {
     @Required()
     @Enum(ParameterSetRequestType)
     @Description(
@@ -39,8 +39,4 @@ export class ParameterSetRequest extends ParameterRequest {
         1 | INF message<br>`
     )
     type: ParameterSetRequestType
-
-    @Required()
-    @Description('New parameter value')
-    value:string
 }
