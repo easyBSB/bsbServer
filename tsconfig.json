@@ -29,7 +29,7 @@
       "./node_modules/@types"
     ],
     "paths": {
-      "@bsbJS/*": [
+      "@easybsb/bsbjs/*": [
         "../bsbjs/src/*"
       ]
     }

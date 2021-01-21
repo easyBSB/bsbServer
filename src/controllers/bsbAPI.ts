@@ -1,18 +1,29 @@
 import { BodyParams, Configuration, Controller, Get, PathParams, Post } from "@tsed/common";
 import { OperationId, array, from, OneOf, Tags, Description, Required, Example, Returns } from "@tsed/schema"
-import { ResetValueResponse, ResetValueResponseEntry, SetValueResponse, SetValueResponseEntry, ValueResponse } from "../models/ValueResponses";
 import { Hidden } from "@tsed/swagger";
-import { ParameterRequest, ParameterSetConfigRequest, ParameterSetRequest } from "../models/ParameterRequests";
-import { ApiVersionResponse } from "../models/ApiVersionResponse";
-import { InformationResponse, InformationResponseExample } from "../models/InformationResponse";
-import { ParameterDetailResponse } from "../models/ParameterDetailResponse";
-import { Categories } from "../models/Categorie";
 
-import { BSB, MSG_TYPE} from "@bsbJS/bsb"
-import { Definition } from "@bsbJS/Definition"
 import config from "@easybsb/bsbdef"
-import * as Payloads from "@bsbJS/Payloads"
-import { Helper } from "@bsbJS/Helper";
+
+import { 
+  ApiVersionResponse, 
+  ParameterRequest, 
+  ParameterSetConfigRequest, 
+  ParameterSetRequest,
+  InformationResponse, 
+  InformationResponseExample,
+  ParameterDetailResponse,
+  Categories,
+  ResetValueResponse,
+  ResetValueResponseEntry,
+  SetValueResponse,
+  SetValueResponseEntry,
+  ValueResponse } from "@easybsb/bsbjs/models";
+
+import { BSB, MSG_TYPE} from "@easybsb/bsbjs/bsb"
+import { Definition } from "@easybsb/bsbjs/Definition"
+
+import * as Payloads from "@easybsb/bsbjs/Payloads"
+import { Helper } from "@easybsb/bsbjs/Helper";
 
 @Controller("/")
 export class BSBApiController {
