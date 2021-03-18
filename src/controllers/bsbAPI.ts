@@ -1,15 +1,18 @@
 import { BodyParams, Configuration, Controller, Get, PathParams, Post } from "@tsed/common";
-import { OperationId, array, from, OneOf, Tags, Description, Required, Example, Returns } from "@tsed/schema"
+import { OperationId, array, from, OneOf, Tags, 
+  Description, Required, Example, Returns,
+  Default,
+  Minimum,
+  Maximum } from "@tsed/schema"
 import { Hidden } from "@tsed/swagger";
 
-import config from "@easybsb/bsbdef"
+import * as config from "@easybsb/bsbdef"
 
-import { 
-  ApiVersionResponse, 
-  ParameterRequest, 
-  ParameterSetConfigRequest, 
+import {
+  ApiVersionResponse,
+  ParameterSetConfigRequest,
   ParameterSetRequest,
-  InformationResponse, 
+  InformationResponse,
   InformationResponseExample,
   ParameterDetailResponse,
   Categories,
@@ -17,50 +20,74 @@ import {
   ResetValueResponseEntry,
   SetValueResponse,
   SetValueResponseEntry,
-  ValueResponse } from "@easybsb/bsbjs/models";
+  ValueResponse
+} from "./../models";
 
-import { BSB, MSG_TYPE} from "@easybsb/bsbjs/bsb"
+import * as Models from "./../models";
+
+
+import { BSB, MSG_TYPE } from "@easybsb/bsbjs/bsb"
+import { bsbAPI } from "@easybsb/bsbjs/bsbAPI"
 import { Definition } from "@easybsb/bsbjs/Definition"
 
-import * as Payloads from "@easybsb/bsbjs/Payloads"
 import { Helper } from "@easybsb/bsbjs/Helper";
+
+import { BSBServiceOptions } from "src/Server";
+
+@Example({ parameter: 700 })
+export class Parameter {
+    
+    @Required()
+    @Description('The id of the parameter.')
+    parameter: number
+}
+
+@Example({ parameter: 700, destination: 0 })
+export class ParameterRequest extends Models.Parameter {
+    @Default(0)
+    @Minimum(0)
+    @Maximum(127)
+    @Description('The DST address there the packet is sent on the Bus')
+    destination: number
+}
+
+export class ModelsParameterRequest extends Models.ParameterRequest {
+
+} 
 
 @Controller("/")
 export class BSBApiController {
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  bsbSettings: any
+  bsbSettings: BSBServiceOptions
 
-  bsb:BSB
+  bsb: bsbAPI
 
   constructor(@Configuration() private configuration: Configuration) {
-    
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    this.bsbSettings = this.configuration.get<any>('bsbServiceOptions');
+
+    this.bsbSettings = this.configuration.get<BSBServiceOptions>('bsbServiceOptions');
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const definition = new Definition(config as any)
 
-    this.bsb = new BSB(definition, { family:0, var: 0}, 0xC3)
+    const bsb = new BSB(definition, { family: 0, var: 0 }, 0xC3)
 
-    this.bsb.connect('192.168.203.179', 1000)
+    bsb.connect(this.bsbSettings.connection.ip, this.bsbSettings.connection.port)
 
-    console.log("*************************")
-    console.log(this.bsbSettings)
+    this.bsb = new bsbAPI(bsb, this.bsbSettings.language)
 
     const language = 'DE'
 
-    const nm = this.bsb.Log$.subscribe((log) => {
+    const nm = bsb.Log$.subscribe((log) => {
 
       // ToDo implement equivalent to telnet log
       console.log(
-          Helper.toHexString(log.msg.data).padEnd(50, ' ') + MSG_TYPE[log.msg.typ].padStart(4, ' ') + ' '
-          + Helper.toHexString([log.msg.src])
-          + ' -> ' + Helper.toHexString([log.msg.dst])
-          + ' ' + log.command?.command + ' ' + Helper.getLanguage(log.command?.description, language) + ' (' + log.command?.parameter + ') = ' 
-          + (log.value?.toString(language) ?? '---')
+        Helper.toHexString(log.msg.data).padEnd(50, ' ') + MSG_TYPE[log.msg.typ].padStart(4, ' ') + ' '
+        + Helper.toHexString([log.msg.src])
+        + ' -> ' + Helper.toHexString([log.msg.dst])
+        + ' ' + log.command?.command + ' ' + Helper.getLanguage(log.command?.description, language) + ' (' + log.command?.parameter + ') = '
+        + (log.value?.toString(language) ?? '---')
       )
-  });
+    });
   }
 
   //#region helpers
@@ -187,53 +214,10 @@ export class BSBApiController {
     @Description('The body contains an array of just one simple ParameterRequest object')
     @Example([{ parameter: 700 }, { parameter: 710 }])
     @Required()
-    @OneOf(from(ParameterRequest), array().items(from(ParameterRequest)))
+    @OneOf(from(Models.ParameterRequest), array().items(from(Models.ParameterRequest)))
     payloadArrayOrItem: ParameterRequest | ParameterRequest[]): Promise<ValueResponse> {
 
-    const payload = this.MakeArray(payloadArrayOrItem)
-
-      const query = []
-      for(const item of payload)
-      {
-        query.push(item.parameter)
-      }
-
-    const language = 'DE'
-    
-    
-    return  await this.bsb.get(query)
-            .then(data => {
-                const result: ValueResponse = {}
-                for (const res of data) {
-                  
-                    if (res) {
-
-                        let error = 0
-                        let value = res.value?.toString(language)
-                        let desc = ''
-                        if (res.value instanceof Payloads.Error) {
-                            error = res.value.value ?? 0
-                            value = ''
-                        }
-
-                        if (res.value instanceof Payloads.Enum) {
-                            desc = value
-                            value = res.value.value?.toString() ?? ''
-                        }
-
-                        result[res.command.parameter] = {
-                            name: Helper.getLanguage(res.command.description, language) ?? '',
-                            error: error,
-                            value: value,
-                            desc: desc,
-                            dataType: res.command.type.datatype_id,
-                            readonly: ((res.command.flags?.indexOf('READONLY') ?? -1) != -1) ? 1 : 0,
-                            unit: Helper.getLanguage(res.command.type.unit, language) ?? ''
-                        }
-                    }
-                }
-                return result
-            })
+    return this.bsb.fetchValues(payloadArrayOrItem)
   }
 
   @Get("/JQ=:id")

@@ -12,7 +12,7 @@
       {
         "root": ["./src"],
         "alias": {
-          "^@bsbJS/(.+)": "./../bsbjs/dist/\\1"
+          "^@easybsb/bsbjs/(.+)": "./../bsbjs/dist/\\1"
         },
         "loglevel": "verbose"
       }

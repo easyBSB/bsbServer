@@ -1,6 +1,5 @@
-import {Env} from "@tsed/core";
-import {Configuration, Inject} from "@tsed/di";
-import {$log, PlatformApplication} from "@tsed/common";
+import { Configuration, Inject } from "@tsed/di";
+import { $log, PlatformApplication } from "@tsed/common";
 import "@tsed/platform-express"; // /!\ keep this import
 import bodyParser from "body-parser";
 import compress from "compression";
@@ -31,6 +30,17 @@ if (isProduction) {
   });
 }
 
+
+const bsbServiceOptions = {
+  connection: {
+    type: process.env.CONNECTION_TYPE || 'ip',
+    ip: process.env.CONNECTION_IP || '192.168.203.179',
+    port: parseInt(process.env.CONNECTION_PORT ?? '1000', 10),
+  },
+  language: 'DE'
+}
+
+export type BSBServiceOptions = typeof bsbServiceOptions
 @Configuration({
   rootDir,
   acceptMimes: ["application/json"],
@@ -40,7 +50,7 @@ if (isProduction) {
 
   logger: {
     disableRoutesSummary: isProduction,
-    level: isProduction ? "error": "info"
+    level: isProduction ? "error" : "info"
   },
   mount: {
     "/": [
@@ -50,12 +60,7 @@ if (isProduction) {
   componentsScan: [
     `${rootDir}/services/**/*.ts`
   ],
-  customServiceOptions: {
-    test: 'Hallo'
-  },
-  bsbServiceOptions: {
-    test: 'Hallo BSB'
-  },
+  bsbServiceOptions: bsbServiceOptions,
   swagger: [
     {
       path: "/v2/docs",
@@ -82,6 +87,7 @@ export class Server {
   settings: Configuration;
 
   $beforeRoutesInit(): void {
+
     this.app
       .use(cors())
       .use(cookieParser())

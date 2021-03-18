@@ -15,11 +15,11 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
     "importHelpers": true,
     "newLine": "LF",
     "noEmit": true,
     "esModuleInterop": true,
-    "resolveJsonModule": true,
     "lib": [
       "es7",
       "dom",
