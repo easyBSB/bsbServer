@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Param, Req } from '@nestjs/common'
+import { Controller, Get, Post, Param, Req, Body } from '@nestjs/common'
 import {
+  ApiBody,
   ApiExtraModels,
   ApiOperation,
   ApiProperty,
@@ -23,7 +24,7 @@ export class postHelloBody {
 @Controller()
 @ApiExtraModels(postHelloBody)
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(private readonly appService: AppService) { }
 
   @Get('/JC=:id')
   // @ApiResponse({
@@ -91,7 +92,37 @@ export class AppController {
       },
     },
   })
-  postHello(@Req() request: Request): string {
+  @ApiBody({
+    schema: {
+      oneOf: [
+        { $ref: getSchemaPath(postHelloBody) },
+        {
+          type: 'array',
+          items: { $ref: getSchemaPath(postHelloBody) },
+        },
+      ],
+    },
+    examples: {
+      'Foo User': {
+        value: {
+          name: 'foo name diffrent',
+          age: 20,
+          type: 'FOO',
+        },
+        description: 'This is Foo user Example',
+      },
+      'Bar User': {
+        value: {
+          name: 'bar name diffrent',
+          age: 30,
+          type: 'BAR',
+        },
+        description: 'This is Bar user Example',
+      },
+    },
+  } as any)
+  postHello(@Body() request: Request): string {
+  //postHello(@Req() request: Request): string {
     // if (data instanceof Array) {
     //   data = data[0]
     // }
